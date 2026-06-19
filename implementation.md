@@ -27,10 +27,10 @@ This document tracks the phased implementation and submission deliverables for t
 - [x] Dashboard with stats and low-stock list
 
 ### Phase 4 — Polish & Deploy
-- [ ] Error handling and user feedback on frontend
-- [ ] Responsive styling pass
+- [x] Error handling and user feedback on frontend
+- [x] Responsive styling pass
 - [ ] Backend tests (pytest)
-- [ ] Production Dockerfiles
+- [x] Production Dockerfiles
 - [ ] Push backend image to Docker Hub
 - [ ] Deploy backend + frontend to free hosting
 - [ ] End-to-end verification on live URLs

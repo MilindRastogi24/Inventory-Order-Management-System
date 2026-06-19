@@ -4,6 +4,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import DataTable from '../components/common/DataTable';
+import ErrorBanner from '../components/common/ErrorBanner';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import PageHeader from '../components/layout/PageHeader';
 import { useAppContext } from '../context/AppContext';
@@ -14,7 +15,7 @@ import { formatCurrency, formatDate } from '../utils/validation';
 export default function OrderDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
-  const { order, loading, error } = useOrder(id);
+  const { order, loading, error, refetch } = useOrder(id);
   const { deleteOrder } = useOrders();
   const { showAlert } = useAppContext();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -27,7 +28,7 @@ export default function OrderDetailPage() {
       showAlert('success', 'Order deleted and stock restored');
       navigate('/orders');
     } catch (err) {
-      showAlert('error', getErrorMessage(err));
+      showAlert('error', err.userMessage || getErrorMessage(err));
     } finally {
       setSubmitting(false);
       setConfirmOpen(false);
@@ -45,8 +46,15 @@ export default function OrderDetailPage() {
   if (error || !order) {
     return (
       <div>
-        <p className="text-red-600">{error || 'Order not found'}</p>
-        <Link to="/orders" className="mt-4 text-indigo-600 hover:underline">Back to orders</Link>
+        <PageHeader title="Order details" description="View order information" />
+        <ErrorBanner
+          title="Failed to load order"
+          message={error || 'Order not found'}
+          onRetry={refetch}
+        />
+        <Link to="/orders" className="mt-4 text-sm font-medium text-indigo-600 hover:text-indigo-800">
+          Back to orders
+        </Link>
       </div>
     );
   }
@@ -57,11 +65,11 @@ export default function OrderDetailPage() {
         title={`Order #${order.id}`}
         description={`Created ${formatDate(order.created_at)}`}
         action={
-          <div className="flex gap-2">
-            <Link to="/orders">
-              <Button variant="secondary">Back</Button>
+          <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+            <Link to="/orders" className="w-full sm:w-auto">
+              <Button variant="secondary" className="w-full sm:w-auto">Back</Button>
             </Link>
-            <Button variant="danger" onClick={() => setConfirmOpen(true)}>
+            <Button variant="danger" className="w-full sm:w-auto" onClick={() => setConfirmOpen(true)}>
               Delete Order
             </Button>
           </div>
@@ -85,14 +93,26 @@ export default function OrderDetailPage() {
         </div>
       </div>
 
-      <h2 className="mb-4 text-lg font-semibold text-slate-900">Order Items</h2>
-      <DataTable columns={['Product', 'Quantity', 'Unit Price', 'Line Total']}>
+      <h2 className="mb-4 text-base font-semibold text-slate-900 sm:text-lg">Order Items</h2>
+      <DataTable
+        columns={[
+          'Product',
+          'Qty',
+          { label: 'Unit Price', className: 'hidden sm:table-cell' },
+          'Total',
+        ]}
+      >
         {order.items.map((item) => (
           <tr key={item.product_id} className="hover:bg-slate-50">
-            <td className="px-4 py-3 text-sm font-medium text-slate-900">{item.product_name}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{item.quantity}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatCurrency(item.unit_price)}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatCurrency(item.line_total)}</td>
+            <td className="px-3 py-3 sm:px-4">
+              <div className="text-sm font-medium text-slate-900">{item.product_name}</div>
+              <div className="mt-0.5 text-xs text-slate-500 sm:hidden">
+                {formatCurrency(item.unit_price)} each
+              </div>
+            </td>
+            <td className="px-3 py-3 text-sm text-slate-600 sm:px-4">{item.quantity}</td>
+            <td className="hidden px-3 py-3 text-sm text-slate-600 sm:table-cell sm:px-4">{formatCurrency(item.unit_price)}</td>
+            <td className="px-3 py-3 text-sm font-medium text-slate-900 sm:px-4">{formatCurrency(item.line_total)}</td>
           </tr>
         ))}
       </DataTable>

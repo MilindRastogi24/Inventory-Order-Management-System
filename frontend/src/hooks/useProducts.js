@@ -14,7 +14,7 @@ export function useProducts() {
       const response = await productsApi.list();
       setProducts(response.data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err.userMessage || getErrorMessage(err));
     } finally {
       setLoading(false);
     }

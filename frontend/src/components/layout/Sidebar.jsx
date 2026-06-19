@@ -44,13 +44,26 @@ export default function Sidebar({ open, onClose }) {
         />
       )}
       <aside
-        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-slate-900 text-white transition-transform lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        className={`fixed inset-y-0 left-0 z-50 w-64 transform bg-slate-900 text-white transition-transform duration-200 ease-out lg:translate-x-0 ${open ? 'translate-x-0' : '-translate-x-full'}`}
+        aria-label="Main navigation"
       >
-        <div className="flex h-16 items-center gap-2 border-b border-slate-800 px-6">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold">
-            I
+        <div className="flex h-16 items-center justify-between border-b border-slate-800 px-4 sm:px-6">
+          <div className="flex items-center gap-2">
+            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 font-bold">
+              I
+            </div>
+            <span className="text-lg font-semibold">Inventory OS</span>
           </div>
-          <span className="text-lg font-semibold">Inventory OS</span>
+          <button
+            type="button"
+            className="rounded-lg p-2 text-slate-300 hover:bg-slate-800 hover:text-white lg:hidden"
+            onClick={onClose}
+            aria-label="Close menu"
+          >
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
         </div>
         <nav className="space-y-1 p-4">
           {navItems.map((item) => (

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import Button from '../components/common/Button';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import DataTable from '../components/common/DataTable';
+import ErrorBanner from '../components/common/ErrorBanner';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Modal from '../components/common/Modal';
 import PageHeader from '../components/layout/PageHeader';
@@ -13,7 +14,7 @@ import { validateCustomer } from '../utils/validation';
 const emptyForm = { full_name: '', email: '', phone: '' };
 
 export default function CustomersPage() {
-  const { customers, loading, error, createCustomer, deleteCustomer } = useCustomers();
+  const { customers, loading, error, refetch, createCustomer, deleteCustomer } = useCustomers();
   const { showAlert } = useAppContext();
   const [modalOpen, setModalOpen] = useState(false);
   const [form, setForm] = useState(emptyForm);
@@ -37,7 +38,7 @@ export default function CustomersPage() {
       setModalOpen(false);
       setForm(emptyForm);
     } catch (err) {
-      showAlert('error', getErrorMessage(err));
+      showAlert('error', err.userMessage || getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -51,7 +52,7 @@ export default function CustomersPage() {
       showAlert('success', 'Customer deleted');
       setDeleteTarget(null);
     } catch (err) {
-      showAlert('error', getErrorMessage(err));
+      showAlert('error', err.userMessage || getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -74,16 +75,30 @@ export default function CustomersPage() {
       />
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
+        <ErrorBanner message={error} onRetry={refetch} title="Failed to load customers" />
       )}
 
-      <DataTable columns={['Full Name', 'Email', 'Phone', 'Actions']} emptyMessage="No customers yet.">
+      <DataTable
+        columns={[
+          'Name',
+          { label: 'Email', className: 'hidden sm:table-cell' },
+          { label: 'Phone', className: 'hidden md:table-cell' },
+          'Actions',
+        ]}
+        emptyMessage="No customers yet."
+      >
         {customers.map((customer) => (
           <tr key={customer.id} className="hover:bg-slate-50">
-            <td className="px-4 py-3 text-sm font-medium text-slate-900">{customer.full_name}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{customer.email}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{customer.phone}</td>
-            <td className="px-4 py-3">
+            <td className="px-3 py-3 sm:px-4">
+              <div className="text-sm font-medium text-slate-900">{customer.full_name}</div>
+              <div className="mt-0.5 text-xs text-slate-500 sm:hidden">
+                {customer.email}
+                {customer.phone ? ` · ${customer.phone}` : ''}
+              </div>
+            </td>
+            <td className="hidden px-3 py-3 text-sm text-slate-600 sm:table-cell sm:px-4">{customer.email}</td>
+            <td className="hidden px-3 py-3 text-sm text-slate-600 md:table-cell sm:px-4">{customer.phone}</td>
+            <td className="px-3 py-3 sm:px-4">
               <Button
                 variant="ghost"
                 className="!px-2 !py-1 text-red-600 hover:bg-red-50"

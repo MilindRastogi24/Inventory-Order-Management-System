@@ -14,7 +14,7 @@ export function useCustomers() {
       const response = await customersApi.list();
       setCustomers(response.data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err.userMessage || getErrorMessage(err));
     } finally {
       setLoading(false);
     }

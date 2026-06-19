@@ -3,6 +3,7 @@ import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import ConfirmDialog from '../components/common/ConfirmDialog';
 import DataTable from '../components/common/DataTable';
+import ErrorBanner from '../components/common/ErrorBanner';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Modal from '../components/common/Modal';
 import PageHeader from '../components/layout/PageHeader';
@@ -14,7 +15,7 @@ import { validateProduct, formatCurrency } from '../utils/validation';
 const emptyForm = { name: '', sku: '', price: '', quantity_in_stock: '' };
 
 export default function ProductsPage() {
-  const { products, loading, error, createProduct, updateProduct, deleteProduct } = useProducts();
+  const { products, loading, error, refetch, createProduct, updateProduct, deleteProduct } = useProducts();
   const { showAlert } = useAppContext();
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -66,7 +67,7 @@ export default function ProductsPage() {
       }
       setModalOpen(false);
     } catch (err) {
-      showAlert('error', getErrorMessage(err));
+      showAlert('error', err.userMessage || getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -80,7 +81,7 @@ export default function ProductsPage() {
       showAlert('success', 'Product deleted');
       setDeleteTarget(null);
     } catch (err) {
-      showAlert('error', getErrorMessage(err));
+      showAlert('error', err.userMessage || getErrorMessage(err));
     } finally {
       setSubmitting(false);
     }
@@ -111,7 +112,7 @@ export default function ProductsPage() {
       />
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
+        <ErrorBanner message={error} onRetry={refetch} title="Failed to load products" />
       )}
 
       <div className="mb-4">
@@ -124,21 +125,35 @@ export default function ProductsPage() {
         />
       </div>
 
-      <DataTable columns={['Name', 'SKU', 'Price', 'Stock', 'Actions']} emptyMessage="No products yet.">
+      <DataTable
+        columns={[
+          'Name',
+          { label: 'SKU', className: 'hidden sm:table-cell' },
+          { label: 'Price', className: 'hidden md:table-cell' },
+          'Stock',
+          'Actions',
+        ]}
+        emptyMessage="No products yet."
+      >
         {filtered.map((product) => (
           <tr key={product.id} className="hover:bg-slate-50">
-            <td className="px-4 py-3 text-sm font-medium text-slate-900">{product.name}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{product.sku}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatCurrency(product.price)}</td>
-            <td className="px-4 py-3">
+            <td className="px-3 py-3 sm:px-4">
+              <div className="text-sm font-medium text-slate-900">{product.name}</div>
+              <div className="mt-0.5 text-xs text-slate-500 sm:hidden">
+                {product.sku} · {formatCurrency(product.price)}
+              </div>
+            </td>
+            <td className="hidden px-3 py-3 text-sm text-slate-600 sm:table-cell sm:px-4">{product.sku}</td>
+            <td className="hidden px-3 py-3 text-sm text-slate-600 md:table-cell sm:px-4">{formatCurrency(product.price)}</td>
+            <td className="px-3 py-3 sm:px-4">
               {product.quantity_in_stock <= 10 ? (
                 <Badge variant="warning">{product.quantity_in_stock}</Badge>
               ) : (
                 <Badge variant="success">{product.quantity_in_stock}</Badge>
               )}
             </td>
-            <td className="px-4 py-3">
-              <div className="flex gap-2">
+            <td className="px-3 py-3 sm:px-4">
+              <div className="flex flex-wrap gap-2">
                 <Button variant="ghost" className="!px-2 !py-1" onClick={() => openEdit(product)}>
                   Edit
                 </Button>

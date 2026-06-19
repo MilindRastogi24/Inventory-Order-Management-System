@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Button from '../components/common/Button';
 import Badge from '../components/common/Badge';
 import DataTable from '../components/common/DataTable';
+import ErrorBanner from '../components/common/ErrorBanner';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import Modal from '../components/common/Modal';
 import PageHeader from '../components/layout/PageHeader';
@@ -14,7 +15,7 @@ import { getErrorMessage } from '../api/client';
 import { formatCurrency, formatDate } from '../utils/validation';
 
 export default function OrdersPage() {
-  const { orders, loading, error, createOrder } = useOrders();
+  const { orders, loading, error, refetch, createOrder } = useOrders();
   const { customers } = useCustomers();
   const { products } = useProducts();
   const { showAlert } = useAppContext();
@@ -90,9 +91,8 @@ export default function OrdersPage() {
       showAlert('success', 'Order created successfully');
       setModalOpen(false);
     } catch (err) {
-      const message = getErrorMessage(err);
+      const message = err.userMessage || getErrorMessage(err);
       setFormError(message);
-      showAlert('error', message);
     } finally {
       setSubmitting(false);
     }
@@ -115,20 +115,38 @@ export default function OrdersPage() {
       />
 
       {error && (
-        <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-4 text-red-700">{error}</div>
+        <ErrorBanner message={error} onRetry={refetch} title="Failed to load orders" />
       )}
 
-      <DataTable columns={['Order ID', 'Customer', 'Total', 'Status', 'Date', 'Actions']} emptyMessage="No orders yet.">
+      <DataTable
+        columns={[
+          'Order',
+          'Customer',
+          'Total',
+          { label: 'Status', className: 'hidden sm:table-cell' },
+          { label: 'Date', className: 'hidden md:table-cell' },
+          'Actions',
+        ]}
+        emptyMessage="No orders yet."
+      >
         {orders.map((order) => (
           <tr key={order.id} className="hover:bg-slate-50">
-            <td className="px-4 py-3 text-sm font-medium text-slate-900">#{order.id}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{order.customer_name}</td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatCurrency(order.total_amount)}</td>
-            <td className="px-4 py-3">
+            <td className="px-3 py-3 text-sm font-medium text-slate-900 sm:px-4">#{order.id}</td>
+            <td className="px-3 py-3 sm:px-4">
+              <div className="text-sm text-slate-600">{order.customer_name}</div>
+              <div className="mt-1 sm:hidden">
+                <Badge variant={order.status === 'active' ? 'success' : 'info'}>{order.status}</Badge>
+              </div>
+            </td>
+            <td className="px-3 py-3 text-sm text-slate-600 sm:px-4">
+              <div>{formatCurrency(order.total_amount)}</div>
+              <div className="mt-0.5 text-xs text-slate-400 md:hidden">{formatDate(order.created_at)}</div>
+            </td>
+            <td className="hidden px-3 py-3 sm:table-cell sm:px-4">
               <Badge variant={order.status === 'active' ? 'success' : 'info'}>{order.status}</Badge>
             </td>
-            <td className="px-4 py-3 text-sm text-slate-600">{formatDate(order.created_at)}</td>
-            <td className="px-4 py-3">
+            <td className="hidden px-3 py-3 text-sm text-slate-600 md:table-cell sm:px-4">{formatDate(order.created_at)}</td>
+            <td className="px-3 py-3 sm:px-4">
               <Link
                 to={`/orders/${order.id}`}
                 className="text-sm font-medium text-indigo-600 hover:text-indigo-800"
@@ -143,6 +161,7 @@ export default function OrdersPage() {
       <Modal
         open={modalOpen}
         title="Create Order"
+        size="lg"
         onClose={() => setModalOpen(false)}
         footer={
           <>
@@ -185,11 +204,14 @@ export default function OrdersPage() {
             </div>
             <div className="space-y-3">
               {lineItems.map((item, index) => (
-                <div key={index} className="flex gap-2">
+                <div
+                  key={index}
+                  className="flex flex-col gap-2 rounded-lg border border-slate-200 p-3 sm:flex-row sm:border-0 sm:p-0"
+                >
                   <select
                     value={item.product_id}
                     onChange={(e) => updateLineItem(index, 'product_id', e.target.value)}
-                    className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                    className="w-full flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm sm:min-w-0"
                   >
                     <option value="">Select product...</option>
                     {products.map((p) => (
@@ -198,19 +220,26 @@ export default function OrdersPage() {
                       </option>
                     ))}
                   </select>
-                  <input
-                    type="number"
-                    min="1"
-                    value={item.quantity}
-                    onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
-                    className="w-20 rounded-lg border border-slate-300 px-3 py-2 text-sm"
-                    placeholder="Qty"
-                  />
-                  {lineItems.length > 1 && (
-                    <Button variant="ghost" className="!px-2" onClick={() => removeLineItem(index)}>
-                      ×
-                    </Button>
-                  )}
+                  <div className="flex gap-2">
+                    <input
+                      type="number"
+                      min="1"
+                      value={item.quantity}
+                      onChange={(e) => updateLineItem(index, 'quantity', e.target.value)}
+                      className="w-full rounded-lg border border-slate-300 px-3 py-2 text-sm sm:w-24"
+                      placeholder="Qty"
+                    />
+                    {lineItems.length > 1 && (
+                      <Button
+                        variant="ghost"
+                        className="!px-3 shrink-0"
+                        onClick={() => removeLineItem(index)}
+                        aria-label="Remove line item"
+                      >
+                        ×
+                      </Button>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
@@ -219,7 +248,9 @@ export default function OrdersPage() {
           <div className="rounded-lg bg-slate-50 p-3 text-sm">
             <span className="text-slate-500">Estimated total: </span>
             <span className="font-semibold text-slate-900">{formatCurrency(estimatedTotal)}</span>
-            <span className="text-slate-400"> (final amount calculated by server)</span>
+            <span className="block text-slate-400 sm:inline sm:ml-1">
+              (final amount calculated by server)
+            </span>
           </div>
         </div>
       </Modal>

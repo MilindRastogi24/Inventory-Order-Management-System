@@ -14,7 +14,7 @@ export function useOrders() {
       const response = await ordersApi.list();
       setOrders(response.data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err.userMessage || getErrorMessage(err));
     } finally {
       setLoading(false);
     }
@@ -58,7 +58,7 @@ export function useOrder(id) {
       const response = await ordersApi.get(id);
       setOrder(response.data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err.userMessage || getErrorMessage(err));
     } finally {
       setLoading(false);
     }

@@ -7,14 +7,14 @@ export default function StatCard({ label, value, icon, accent = 'indigo' }) {
   };
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm">
-      <div className="flex items-center justify-between">
-        <div>
+    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
           <p className="text-sm font-medium text-slate-500">{label}</p>
-          <p className="mt-2 text-3xl font-bold text-slate-900">{value}</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900 sm:mt-2 sm:text-3xl">{value}</p>
         </div>
         {icon && (
-          <div className={`flex h-12 w-12 items-center justify-center rounded-xl ${accents[accent]}`}>
+          <div className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl sm:h-12 sm:w-12 ${accents[accent]}`}>
             {icon}
           </div>
         )}

@@ -14,7 +14,7 @@ export function useDashboard() {
       const response = await dashboardApi.summary();
       setData(response.data);
     } catch (err) {
-      setError(getErrorMessage(err));
+      setError(err.userMessage || getErrorMessage(err));
     } finally {
       setLoading(false);
     }
